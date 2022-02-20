@@ -11,7 +11,7 @@
 #define pin_GREEN 5
 #define pin_BLUE 6
 #define pin_LED 13
-#define max_DMX 24 // Maximum DMX Channel that this module listen to
+#define max_DMX 513 // Maximum DMX Channel that this module listen to
 volatile unsigned char DMX[max_DMX+1]; 
 volatile unsigned int DMXChannelCnt=0;
 volatile unsigned int DMXAddress=1; // the start Address of the device
@@ -37,15 +37,16 @@ ISR(USART_RX_vect)
 
     return;
   }
-  else if (DMXChannelCnt>=DMXAddress){
+  //else if (DMXChannelCnt>=DMXAddress){
     digitalWrite(pin_LED, HIGH);
-    if (DMXOffset <= max_DMX) // Maximum DMX Channel that this module fill the data into the array
-    {
+    //if (DMXOffset <= max_DMX) // Maximum DMX Channel that this module fill the data into the array
+    //{
 
-      DMX[DMXOffset++]=myUDR0; // Read the Data value Received from DMX
-    }
-  }
-  DMXChannelCnt++;
+      //DMX[DMXOffset++]=myUDR0; // Read the Data value Received from DMX
+    //}
+    DMX[DMXChannelCnt++]=myUDR0; // Read the Data value Received from DMX
+  //}
+  //DMXChannelCnt++;
 
 }
 
@@ -63,6 +64,9 @@ void setup()
   pinMode(pin_RED,OUTPUT); //RED
   pinMode(pin_LED,OUTPUT); //LED
   digitalWrite(pin_LED, LOW);
+  for (int x=0;x<513;x++){
+    DMX[x]=0;
+  }
   
   // Baud rate set to 250KBaud https://en.wikipedia.org/wiki/DMX512#Protocol
   // Setting depends on Crystal of the Arduino hence the myubbr #define
@@ -94,38 +98,27 @@ void sendByte(char txd)
 
 void loop()
 {
-  char intLed=0;
-  char mLed1=0;
-  char mLed2=0;
-  char mLed3=0;
+  int mLed1=0;
+  int mLed2=0;
+  int mLed3=0;
+
   // Start Frame
   for (char x=0;x<4;x++){
     sendByte(0x00);
   }
   // LED Frame
-  //for (char nLed = 1;nLed<300;nLed=nLed+3){
-  for (int nLed = 0;nLed<100;nLed++){
-    mLed1=((nLed%8)*3)+1;
-    mLed2=((nLed%8)*3)+2;
-    mLed3=((nLed%8)*3)+3;
+  for (unsigned int nLed = 0;nLed<171;nLed++){
+    mLed1=((nLed)*3)+1;
+    mLed2=((nLed)*3)+2;
+    mLed3=((nLed)*3)+3;
     // Start Frame LED
     sendByte(0xEF);
-    //sendByte(0xFF);
-    //intLed=DMX[1];
-    //intLed=intLed>>3;
-    //intLed=intLed|0xE0;
-    //sendByte(intLed);
-
     // BLUE LED
-    //sendByte(DMX[nLed+2]);
     sendByte(DMX[mLed3]);
     // GREEN LED
-    //sendByte(DMX[nLed+1]);
     sendByte(DMX[mLed2]);
     // RED LED
-    //sendByte(DMX[nLed]);
     sendByte(DMX[mLed1]);
-    //sendByte(0xFF);
   }
   // Stop Frame
   for (char x=0;x<4;x++){
